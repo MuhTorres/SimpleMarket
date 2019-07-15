@@ -1,0 +1,6 @@
+Usuário = Autenticação via JWT
+Middlewares = Validar TOKEN
+REST do SalesOrder (Tem q pegar o usuário do Token)
+Incluir tabela de itens (REST)
+Alterar a tabela de SalesOrder incluir campo Item, Quantidade
+SalesOrderItens
