@@ -10,6 +10,7 @@ module.exports = (req, res, next) => {
     if (err) res.status(401).send('Token inválido!');
     else if (payload) {
       User.findByPk(payload.userId).then(() => {
+        req.userId = payload.userId;
         next();
       });
     } else res.status(401).send('Falha ao autenticar o usuário!');

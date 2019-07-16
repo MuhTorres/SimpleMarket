@@ -28,7 +28,7 @@ class UserController {
       };
       res.status(200).json(req.user);
     } else {
-      res.status(400).json(us.password);
+      res.status(400).send('Usuario não encontrado');
     }
   }
 
