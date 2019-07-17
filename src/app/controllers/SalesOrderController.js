@@ -7,6 +7,8 @@ class SalesOrderController {
   }
 
   async create(req, res) {
+    const { userId } = req;
+    req.body.user_id = userId;
     const response = await SalesOrder.create(req.body);
     const { id } = response;
     const { items } = req.body;

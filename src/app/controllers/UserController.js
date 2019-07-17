@@ -1,9 +1,35 @@
-const { User, SalesOrder, SalesItem } = require('../models');
+const JWT = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const { User, SalesOrder } = require('../models');
+const KEY = require('../middlewares/Key');
 
 class UserController {
   async list(req, res) {
     const response = await User.findAll();
     res.send(response);
+  }
+
+  async authorize(req, res) {
+    const { email } = req.body;
+    const { password } = req.body;
+    const us = await User.findOne({
+      where: {
+        email,
+      },
+      attributes: ['name', 'email', 'id', 'password'],
+    });
+
+    if (us && us.checkPassword(password)) {
+      const token = JWT.sign({ userId: us.id }, KEY.tokenKey);
+      req.user = {
+        userId: us.id,
+        email: us.email,
+        token,
+      };
+      res.status(200).json(req.user);
+    } else {
+      res.status(400).send('Usuario não encontrado');
+    }
   }
 
   async create(req, res) {
@@ -18,6 +44,7 @@ class UserController {
       include: [
         {
           model: SalesOrder,
+          as: 'sales_orders',
         },
       ],
       attributes: ['id', 'name', 'email'],
@@ -46,7 +73,6 @@ class UserController {
     if (!modelData) return res.status(400).send('Registro não encontrado');
 
     await modelData.destroy();
-
     return res.sendStatus(200);
   }
 }

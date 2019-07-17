@@ -21,13 +21,12 @@ module.exports = (sequelize, DataTypes) => {
   User.associate = (models) => {
     User.hasMany(models.SalesOrder, {
       foreignKey: 'user_id',
-      as: 'sales_order',
+      as: 'sales_orders',
     });
   };
 
   User.prototype.checkPassword = function (pwd) {
-    return bcrypt.compare(pwd, this.password);
+    return bcrypt.compareSync(pwd, this.password);
   };
-
   return User;
 };
