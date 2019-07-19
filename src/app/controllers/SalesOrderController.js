@@ -28,43 +28,43 @@ class SalesOrderController {
     const { id } = req.params;
 
     // MÉTODO 01 PARA TRAZER A ARVORE DE PEDIDO (USER - > PEDIDO - > ITEMS)
-    const sales = await SalesOrder.findByPk(id);
-    const response = await User.findOne({
-      where: { id: sales.user_id },
-      attributes: ['name'],
-      include: [
-        {
-          model: SalesOrder,
-          as: 'sales_orders',
-          attributes: ['date', 'description', 'total'],
-          where: { id: sales.id },
-          include: [
-            { model: SalesItem, as: 'items', attributes: ['id', 'code', 'price', 'quantity'] },
-          ],
-        },
-      ],
-    });
-
-    // MÉTODO 02 PARA TRAZER A ARVORE DE PEDIDO (USER - > PEDIDO - > ITEMS)
-    // const response = await SalesOrder.findByPk(id, {
-    //   attributes: [
-    //     ['date', 'Data da Venda'],
-    //     ['description', 'Descrição da Venda'],
-    //     ['total', 'Total do Documento'],
-    //   ],
+    // const sales = await SalesOrder.findByPk(id);
+    // const response = await User.findOne({
+    //   where: { id: sales.user_id },
+    //   attributes: ['name'],
     //   include: [
-    //     { model: User, as: 'user', attributes: [['name', 'Nome']] },
     //     {
-    //       model: SalesItem,
-    //       as: 'items',
-    //       attributes: [
-    //         ['code', 'Código do Item'],
-    //         ['price', 'Preço de Venda'],
-    //         ['quantity', 'Quantidade'],
+    //       model: SalesOrder,
+    //       as: 'sales_orders',
+    //       attributes: ['date', 'description', 'total'],
+    //       where: { id: sales.id },
+    //       include: [
+    //         { model: SalesItem, as: 'items', attributes: ['id', 'code', 'price', 'quantity'] },
     //       ],
     //     },
     //   ],
     // });
+
+    // MÉTODO 02 PARA TRAZER A ARVORE DE PEDIDO (USER - > PEDIDO - > ITEMS)
+    const response = await SalesOrder.findByPk(id, {
+      attributes: [
+        ['date', 'Data da Venda'],
+        ['description', 'Descrição da Venda'],
+        ['total', 'Total do Documento'],
+      ],
+      include: [
+        { model: User, as: 'user', attributes: [['name', 'Nome']] },
+        {
+          model: SalesItem,
+          as: 'items',
+          attributes: [
+            ['code', 'Código do Item'],
+            ['price', 'Preço de Venda'],
+            ['quantity', 'Quantidade'],
+          ],
+        },
+      ],
+    });
 
     res.send(response);
   }
