@@ -1,4 +1,4 @@
-const { SalesOrder, SalesItem } = require('../models');
+const { SalesOrder, SalesItem, User } = require('../models');
 
 class SalesOrderController {
   async list(req, res) {
@@ -8,10 +8,13 @@ class SalesOrderController {
 
   async create(req, res) {
     const { userId } = req;
-    req.body.user_id = userId;
-    const response = await SalesOrder.create(req.body);
-    const { id } = response;
+    const salesBody = req.body;
+    salesBody.user_id = userId;
     const { items } = req.body;
+    salesBody.total = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+
+    const response = await SalesOrder.create(salesBody);
+    const { id } = response;
     if (items) {
       items.forEach((item) => {
         item.sales_id = id;
@@ -24,9 +27,44 @@ class SalesOrderController {
   async get(req, res) {
     const { id } = req.params;
 
-    const response = await SalesOrder.findByPk(id, {
-      include: [{ model: SalesItem, as: 'items' }],
+    // MÉTODO 01 PARA TRAZER A ARVORE DE PEDIDO (USER - > PEDIDO - > ITEMS)
+    const sales = await SalesOrder.findByPk(id);
+    const response = await User.findOne({
+      where: { id: sales.user_id },
+      attributes: ['name'],
+      include: [
+        {
+          model: SalesOrder,
+          as: 'sales_orders',
+          attributes: ['date', 'description', 'total'],
+          where: { id: sales.id },
+          include: [
+            { model: SalesItem, as: 'items', attributes: ['id', 'code', 'price', 'quantity'] },
+          ],
+        },
+      ],
     });
+
+    // MÉTODO 02 PARA TRAZER A ARVORE DE PEDIDO (USER - > PEDIDO - > ITEMS)
+    // const response = await SalesOrder.findByPk(id, {
+    //   attributes: [
+    //     ['date', 'Data da Venda'],
+    //     ['description', 'Descrição da Venda'],
+    //     ['total', 'Total do Documento'],
+    //   ],
+    //   include: [
+    //     { model: User, as: 'user', attributes: [['name', 'Nome']] },
+    //     {
+    //       model: SalesItem,
+    //       as: 'items',
+    //       attributes: [
+    //         ['code', 'Código do Item'],
+    //         ['price', 'Preço de Venda'],
+    //         ['quantity', 'Quantidade'],
+    //       ],
+    //     },
+    //   ],
+    // });
 
     res.send(response);
   }

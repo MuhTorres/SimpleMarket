@@ -4,6 +4,7 @@
     "main": "index.js",
     "license": "MIT",
     "scripts": {
+        "prestart": "yarn migrate",
         "start": "nodemon src/index.js",
         "migrate": "npx sequelize db:migrate",
         "undo-one": "npx sequelize db:migrate:undo",
