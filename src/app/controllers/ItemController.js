@@ -1,4 +1,5 @@
 const { Item } = require('../models');
+const models = require('../models');
 
 class ItemController {
   async list(req, res) {
@@ -7,8 +8,15 @@ class ItemController {
   }
 
   async create(req, res) {
-    const response = await Item.create(req.body);
-    res.send(response);
+    const transaction = await models.sequelize.transaction();
+    try {
+      const response = await Item.create(req.body, { transaction });
+      transaction.commit();
+      res.send(response);
+    } catch (error) {
+      transaction.rollback();
+      res.send(error);
+    }
   }
 
   async get(req, res) {
@@ -26,7 +34,13 @@ class ItemController {
 
     if (!modelData) return res.status(400).send('Registro não encontrado');
 
-    await modelData.update(req.body);
+    const transaction = await models.sequelize.transaction();
+    try {
+      await modelData.update(req.body, { transaction });
+      transaction.commit();
+    } catch (error) {
+      transaction.rollback();
+    }
 
     return res.send(modelData.get());
   }
@@ -37,10 +51,15 @@ class ItemController {
     const modelData = await Item.findByPk(id);
 
     if (!modelData) return res.status(400).send('Registro não encontrado');
-
-    await modelData.destroy();
-
-    return res.sendStatus(200);
+    const transaction = await models.sequelize.transaction();
+    try {
+      await modelData.destroy({ transaction });
+      transaction.commit();
+      return res.sendStatus(200);
+    } catch (error) {
+      transaction.rollback();
+      return res.status(500).json(error);
+    }
   }
 }
 

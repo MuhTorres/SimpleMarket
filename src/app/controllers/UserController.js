@@ -1,7 +1,7 @@
 const JWT = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 const { User, SalesOrder } = require('../models');
 const KEY = require('../middlewares/Key');
+const models = require('../models');
 
 class UserController {
   async list(req, res) {
@@ -33,8 +33,15 @@ class UserController {
   }
 
   async create(req, res) {
-    const response = await User.create(req.body);
-    res.send(response);
+    const transaction = await models.sequelize.transaction();
+    try {
+      const response = await User.create(req.body, { transaction });
+      transaction.commit();
+      res.send(response);
+    } catch (error) {
+      transaction.rollback();
+      res.send(error);
+    }
   }
 
   async get(req, res) {
@@ -60,7 +67,13 @@ class UserController {
 
     if (!modelData) return res.status(400).send('Registro não encontrado');
 
-    await modelData.update(req.body);
+    const transaction = await models.sequelize.transaction();
+    try {
+      await modelData.update(req.body, { transaction });
+      transaction.commit();
+    } catch (error) {
+      transaction.rollback();
+    }
 
     return res.send(modelData.get());
   }
@@ -72,8 +85,15 @@ class UserController {
 
     if (!modelData) return res.status(400).send('Registro não encontrado');
 
-    await modelData.destroy();
-    return res.sendStatus(200);
+    const transaction = await models.sequelize.transaction();
+    try {
+      await modelData.destroy({ transaction });
+      transaction.commit();
+      return res.sendStatus(200);
+    } catch (error) {
+      transaction.rollback();
+      return res.status(500).json(error);
+    }
   }
 }
 

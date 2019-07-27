@@ -1,4 +1,5 @@
 const { SalesOrder, SalesItem } = require('../models');
+const models = require('../models');
 
 class SalesOrderController {
   async list(req, res) {
@@ -9,16 +10,23 @@ class SalesOrderController {
   async create(req, res) {
     const { userId } = req;
     req.body.user_id = userId;
-    const response = await SalesOrder.create(req.body);
-    const { id } = response;
-    const { items } = req.body;
-    if (items) {
-      items.forEach((item) => {
-        item.sales_id = id;
-        SalesItem.create(item);
-      });
+    const transaction = await models.sequelize.transaction();
+    try {
+      const response = await SalesOrder.create(req.body, { transaction });
+      const { id } = response;
+      const { items } = req.body;
+      if (items) {
+        items.forEach((item) => {
+          item.sales_id = id;
+          SalesItem.create(item, { transaction });
+        });
+      }
+      transaction.commit();
+      res.send(response);
+    } catch (error) {
+      transaction.rollback();
+      res.send(error);
     }
-    res.send(response);
   }
 
   async get(req, res) {
@@ -38,7 +46,13 @@ class SalesOrderController {
 
     if (!modelData) return res.status(400).send('Registro não encontrado');
 
-    await modelData.update(req.body);
+    const transaction = await models.sequelize.transaction();
+    try {
+      await modelData.update(req.body, { transaction });
+      transaction.commit();
+    } catch (error) {
+      transaction.rollback();
+    }
 
     return res.send(modelData.get());
   }
@@ -50,15 +64,22 @@ class SalesOrderController {
 
     if (!modelData) return res.status(400).send('Registro não encontrado');
 
-    await modelData.destroy();
-    SalesItem.destroy({
-      tableName: 'sales_items',
-      where: {
-        sales_id: id,
-      },
-    });
-
-    return res.sendStatus(200);
+    const transaction = await models.sequelize.transaction();
+    try {
+      await modelData.destroy({ transaction });
+      SalesItem.destroy({
+        transaction,
+        tableName: 'sales_items',
+        where: {
+          sales_id: id,
+        },
+      });
+      transaction.commit();
+      return res.sendStatus(200);
+    } catch (error) {
+      transaction.rollback();
+      return res.status(500).json(error);
+    }
   }
 }
 
