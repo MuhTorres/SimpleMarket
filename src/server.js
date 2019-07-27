@@ -1,4 +1,6 @@
 const express = require('express');
+const Youch = require('youch');
+const validate = require('express-validation');
 const routes = require('./routes');
 
 class App {
@@ -6,6 +8,7 @@ class App {
     this.express = express();
     this.middlewares();
     this.routes();
+    this.exception();
   }
 
   middlewares() {
@@ -14,6 +17,24 @@ class App {
 
   routes() {
     this.express.use(routes);
+  }
+
+  exception() {
+    this.express.use(async (err, req, res, next) => {
+      if (err instanceof validate.ValidationError) {
+        return res.status(err.status).json(err);
+      }
+
+      const youch = new Youch(err);
+      const detail = await youch.toJSON();
+
+      return res.status(err.status || 500).json({
+        error: {
+          message: 'Erro interno',
+          detail,
+        },
+      });
+    });
   }
 }
 
