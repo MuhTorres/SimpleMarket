@@ -23,6 +23,11 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: 'user_id',
       as: 'sales_orders',
     });
+
+    models.SalesOrder.belongsTo(User, {
+      foreignKey: 'user_id',
+      as: 'user',
+    });
   };
 
   User.prototype.checkPassword = function (pwd) {
